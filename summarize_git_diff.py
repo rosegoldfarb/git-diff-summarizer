@@ -1,6 +1,8 @@
 import argparse
 import subprocess
-import openai
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
 
 
 def get_git_diff(file_path):
@@ -8,26 +10,34 @@ def get_git_diff(file_path):
     result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
     return result.stdout
 
-def summarize_text(api_key, text):
-    openai.api_key = api_key
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=text,
-        max_tokens=100,
-        temperature=0.5,
-        n=1,
-        stop=None,
+def summarize_text (text):
+    # move to different method
+    load_dotenv()
+    api_key = os.environ.get("OPENAI_API_KEY")
+
+    client = OpenAI(api_key=api_key)
+    messages = [ {"role": "system", "content": "You are a code reviewer that provides a concise and simple summary of the changes found in a Git diff file."}]
+    changes = text.split('\n\n')
+    for change in changes:
+        # didn't work
+        clean_change = change.strip().replace('\\n', '\n')
+        messages.append({"role": "user", "content": clean_change})
+
+    completion = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=messages
     )
-    return response.choices[0].text.strip()
+    
+    return completion.choices[0].message
 
 def main():
+    print("running main meth")
     parser = argparse.ArgumentParser(description="Summarize Git diff file using OpenAI API.")
     parser.add_argument("file_path", type=str, help="Path to the Git diff file.")
-    parser.add_argument("api_key", type=str, help="Your OpenAI API key.")
     args = parser.parse_args()
 
     git_diff = get_git_diff(args.file_path)
-    summary = summarize_text(args.api_key, git_diff)
+    summary = summarize_text( git_diff)
 
     print("Git Diff Summary:")
     print(summary)
