@@ -13,9 +13,9 @@ def get_git_diff(file_path):
 def summarize_text (text):
     # move to different method
     load_dotenv()
-    api_key = os.environ.get("OPENAI_API_KEY")
+    # api_key = os.environ.get("OPENAI_API_KEY")
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI()
     messages = [ {"role": "system", "content": "You are a code reviewer that provides a concise and simple summary of the changes found in a Git diff file."}]
     changes = text.split('\n\n')
     for change in changes:
